@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Worksheet System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #worksheet-display {
+            margin-top: 20px;
+            white-space: pre-wrap;
+        }
+        #qr-code {
+            margin-top: 20px;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Math Worksheet System</h1>
+
+    <div class="section">
+        <h2>Generate Worksheet</h2>
+        <div class="form-group">
+            <label for="teacherId">Teacher ID:</label>
+            <input type="text" id="teacherId" value="teacher123">
+        </div>
+        <div class="form-group">
+            <label for="grade">Grade Level:</label>
+            <input type="number" id="grade" value="3" min="1" max="6">
+        </div>
+        <div class="form-group">
+            <label for="problems">Number of Problems:</label>
+            <input type="number" id="problems" value="5" min="1" max="20">
+        </div>
+        <div class="form-group">
+            <label>Operations:</label>
+            <div>
+                <input type="checkbox" id="addition" checked> Addition
+                <input type="checkbox" id="subtraction" checked> Subtraction
+                <input type="checkbox" id="multiplication"> Multiplication
+                <input type="checkbox" id="division"> Division
+            </div>
+        </div>
+        <button onclick="generateWorksheet()">Generate Worksheet</button>
+        <div id="worksheet-display"></div>
+        <div id="qr-code"></div>
+    </div>
+
+    <div class="section">
+        <h2>Submit Worksheet</h2>
+        <div class="form-group">
+            <label for="studentId">Student ID:</label>
+            <input type="text" id="studentId" value="student123">
+        </div>
+        <div class="form-group">
+            <label for="image">Worksheet Image:</label>
+            <input type="file" id="image" accept="image/*">
+        </div>
+        <button onclick="submitWorksheet()">Submit Worksheet</button>
+        <div id="submission-result" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h2>Export Grades</h2>
+        <div class="form-group">
+            <label for="exportTeacherId">Teacher ID:</label>
+            <input type="text" id="exportTeacherId" value="teacher123">
+        </div>
+        <div class="form-group">
+            <label for="format">Format:</label>
+            <select id="format">
+                <option value="json">JSON</option>
+                <option value="csv">CSV</option>
+            </select>
+        </div>
+        <button onclick="exportGrades()">Export Grades</button>
+        <div id="export-result" class="result"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:7071/api';
+
+        async function generateWorksheet() {
+            const operations = [];
+            if (document.getElementById('addition').checked) operations.push('addition');
+            if (document.getElementById('subtraction').checked) operations.push('subtraction');
+            if (document.getElementById('multiplication').checked) operations.push('multiplication');
+            if (document.getElementById('division').checked) operations.push('division');
+
+            const data = {
+                teacherId: document.getElementById('teacherId').value,
+                grade: parseInt(document.getElementById('grade').value),
+                numberOfProblems: parseInt(document.getElementById('problems').value),
+                operations
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/GenerateWorksheet`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                
+                // Display problems
+                const problemsDisplay = result.problems.map(p => p.question).join('\n');
+                document.getElementById('worksheet-display').textContent = problemsDisplay;
+                
+                // Display QR code
+                document.getElementById('qr-code').innerHTML = `<img src="${result.qrCode}" alt="Worksheet QR Code">`;
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to generate worksheet');
+            }
+        }
+
+        async function submitWorksheet() {
+            const file = document.getElementById('image').files[0];
+            if (!file) {
+                alert('Please select an image file');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const data = {
+                    studentId: document.getElementById('studentId').value,
+                    image: e.target.result
+                };
+
+                try {
+                    const response = await fetch(`${API_URL}/ProcessSubmission`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+
+                    const result = await response.json();
+                    document.getElementById('submission-result').textContent = 
+                        `Score: ${result.score}%\nCorrect Answers: ${result.correctAnswers}/${result.totalProblems}`;
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Failed to submit worksheet');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function exportGrades() {
+            const data = {
+                teacherId: document.getElementById('exportTeacherId').value,
+                format: document.getElementById('format').value
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/ExportGrades`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (data.format === 'csv') {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'grades.csv';
+                    a.click();
+                } else {
+                    const result = await response.json();
+                    document.getElementById('export-result').textContent = 
+                        JSON.stringify(result, null, 2);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to export grades');
+            }
+        }
+    </script>
+</body>
+</html>

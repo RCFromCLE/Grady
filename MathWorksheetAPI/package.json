@@ -1,0 +1,43 @@
+{
+  "name": "math-worksheet-api",
+  "version": "1.0.0",
+  "description": "Azure Functions API for math worksheet generation and grading system",
+  "main": "dist/functions/index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "clean": "rimraf dist",
+    "prestart": "npm run clean && npm run build",
+    "start": "concurrently \"func start\" \"node dist/src/staticServer.js\"",
+    "start:api": "func start",
+    "start:web": "node dist/src/staticServer.js",
+    "test": "npm run build && node dist/src/scripts/test.js",
+    "setup-db": "npm run build && node dist/src/scripts/setupDatabase.js"
+  },
+  "dependencies": {
+    "@azure/ai-form-recognizer": "^5.0.0",
+    "@azure/cosmos": "^4.2.0",
+    "@azure/functions": "^4.0.0",
+    "@azure/storage-blob": "^12.26.0",
+    "@types/sharp": "^0.32.0",
+    "@types/uuid": "^10.0.0",
+    "applicationinsights": "^3.5.0",
+    "jsqr": "^1.4.0",
+    "openai": "^4.85.3",
+    "qrcode": "^1.5.4",
+    "sharp": "^0.33.5",
+    "uuid": "^11.0.5"
+  },
+  "devDependencies": {
+    "@types/node": "18.x",
+    "@types/node-fetch": "^2.6.11",
+    "azure-functions-core-tools": "^4.x",
+    "concurrently": "^8.2.2",
+    "copyfiles": "^2.4.1",
+    "cross-env": "^7.0.3",
+    "node-fetch": "^2.7.0",
+    "rimraf": "^5.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^4.0.0"
+  }
+}
